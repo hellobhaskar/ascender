@@ -2,7 +2,7 @@ ascender
 ========
 
 # Overview
-A lightweight, plaintext TCP to message queue gateway (currently AWS SQS only). Ascender is intended to make it easy to send arbitrary data into message queues without having to write boilerplate code for simple tasks. 
+A lightweight, plaintext TCP to message queue gateway (currently AWS SQS only). Ascender is intended to make it easy to send arbitrary data into message queues without having to write boilerplate code for simple tasks.
 
 For instance, if Ascender were listening on `localhost:6030`, it would be valid to do the following:
 <pre>
@@ -24,9 +24,42 @@ Ascender starts up a TCP listener and accepts individual messages up to 256KB (t
 
 Performance note: Ascender is intended to be ran as a lightweight daemon on every node in your fleet, and by default will use only a single core (which is more than enough for most cases). If you run a dedicated Ascender box that will process high event rates, simply raise the '-workers' directive and set the GOMAXPROCS environment variable to n CPUs to maximize parallelism.
 
+# Install
+
+Assuming Go is installed (tested up to version 1.4.1) and $GOPATH is set:
+- `go get github.com/jamiealquiza/ascender`
+- `go build github.com/jamiealquiza/ascender`
+
+Binary will be found at: `$GOPATH/bin/ascender`
+
+Example Upstart:
+<pre>
+% cat /etc/init/ascender.conf
+description "Ascender - SQS Gateway Service"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+console log
+
+respawn
+respawn limit 5 30
+
+setuid ascender
+setgid nogroup
+
+script
+  chdir /opt/ascender
+  export ASCENDER_ACCESS_KEY="xxx"
+  export ASCENDER_SECRET_KEY="xxxxxx"
+  export ASCENDER_SQS_REGION="us-west-2"
+  export ASCENDER_SQS_QUEUE="somequeue"
+  exec ./ascender
+end script
+</pre>
 # Usage
 
-Clone repo, build, run. Requires several AWS settings (see `./ascender -h` output) which can optionally be applied as environment variables*.
+Requires several AWS settings (see `./ascender -h` output) which can optionally be applied as environment variables*.
 
 Usage / help:
 <pre>
@@ -38,7 +71,6 @@ Usage of ./ascender:
   -listen-addr="localhost": bind address
   -listen-port="6030": bind port
   -queue-cap=100: In-flight message queue capacity
-  -v=false: verbose output
   -workers=3: queue workers
 </pre>
 
@@ -52,7 +84,7 @@ ASCENDER_SQS_QUEUE
 
 Server:
 <pre>
-% ./ascender           
+% ./ascender
 2014/10/24 15:53:58 Ascender listening on localhost:6030
 2014/10/24 15:53:59 Connected to queue: https://sqs.us-west-2.amazonaws.com/000/testing
 2014/10/24 15:53:59 Connected to queue: https://sqs.us-west-2.amazonaws.com/000/testing
