@@ -50,15 +50,45 @@ func reqHandler(conn net.Conn, meta interface{}) {
 		conn.Close()
 	}	
 }
-// http://golang.org/pkg/runtime/#ReadMemStats
-// Generate response codes.
+
+// Generate stats response.
 func buildStats(meta interface{}) []byte {
+	// Get current MemStats.
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
-	memStats, err := json.MarshalIndent(mem, "", "  ")
+
+	// We swipe the stats we want.
+	// Reference: http://golang.org/pkg/runtime/#ReadMemStats
+	memInfo := make(map[string]interface{})
+	memInfo["Alloc"] = mem.Alloc
+	memInfo["TotalAlloc"] = mem.TotalAlloc
+	memInfo["Sys"] = mem.Sys
+	memInfo["Lookups"] = mem.Lookups
+	memInfo["Mallocs"] = mem.Mallocs
+	memInfo["Frees"] = mem.Frees
+	memInfo["HeapAlloc"] = mem.HeapAlloc
+	memInfo["HeapSys"] = mem.HeapSys
+	memInfo["HeapIdle"] = mem.HeapIdle
+	memInfo["HeapInuse"] = mem.HeapInuse
+	memInfo["HeapReleased"] = mem.HeapReleased
+	memInfo["HeapObjects"] = mem.HeapObjects
+	memInfo["StackInuse"] = mem.StackInuse
+	memInfo["StackSys"] = mem.StackSys
+	memInfo["MSpanInuse"] = mem.MSpanInuse
+	memInfo["MSpanSys"] = mem.MSpanSys
+	memInfo["MCacheInuse"] = mem.MCacheInuse
+	memInfo["MCacheSys"] = mem.MCacheSys
+	memInfo["BuckHashSys"] = mem.BuckHashSys
+	memInfo["GCSys"] = mem.GCSys
+	memInfo["OtherSys"] = mem.OtherSys
+	memInfo["NextGC"] = mem.NextGC
+	memInfo["LastGC"] = mem.LastGC
+	memInfo["PauseTotalNs"] = mem.PauseTotalNs
+	memInfo["NumGC"] = mem.NumGC
+
+	response, err := json.MarshalIndent(memInfo, "", "  ")
 	if err != nil {
 		log.Printf("Error parsing: %s", err)
 	}
-	m := fmt.Sprintf("%s\n%s\n", meta, memStats)
-	return []byte(m)
+	return response
 }
