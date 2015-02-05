@@ -1,4 +1,4 @@
-// 2014, 1015 Jamie Alquiza
+// 2014, 2015 Jamie Alquiza
 package main
 
 import (
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jamiealquiza/ascender/outputs/sqs"
+	"github.com/jamiealquiza/ascender/util/ghostats"
 )
 
 // General server config struct.
@@ -86,6 +87,7 @@ func runControl() {
 func main() {
 	go listenTcp()
 	go msgHandler()
+	go ghostats.Start("localhost", "6031", ascender)
 
 	sentCnt := NewStatser()
 	go statsTracker(sentCnt)
