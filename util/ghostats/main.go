@@ -57,38 +57,41 @@ func buildStats(meta interface{}) []byte {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
 
+	// Object that will carry all response info.
+	stats := make(map[string]map[string]interface{})
 	// We swipe the stats we want.
 	// Reference: http://golang.org/pkg/runtime/#ReadMemStats
-	memInfo := make(map[string]interface{})
-	memInfo["Alloc"] = mem.Alloc
-	memInfo["TotalAlloc"] = mem.TotalAlloc
-	memInfo["Sys"] = mem.Sys
-	memInfo["Lookups"] = mem.Lookups
-	memInfo["Mallocs"] = mem.Mallocs
-	memInfo["Frees"] = mem.Frees
-	memInfo["HeapAlloc"] = mem.HeapAlloc
-	memInfo["HeapSys"] = mem.HeapSys
-	memInfo["HeapIdle"] = mem.HeapIdle
-	memInfo["HeapInuse"] = mem.HeapInuse
-	memInfo["HeapReleased"] = mem.HeapReleased
-	memInfo["HeapObjects"] = mem.HeapObjects
-	memInfo["StackInuse"] = mem.StackInuse
-	memInfo["StackSys"] = mem.StackSys
-	memInfo["MSpanInuse"] = mem.MSpanInuse
-	memInfo["MSpanSys"] = mem.MSpanSys
-	memInfo["MCacheInuse"] = mem.MCacheInuse
-	memInfo["MCacheSys"] = mem.MCacheSys
-	memInfo["BuckHashSys"] = mem.BuckHashSys
-	memInfo["GCSys"] = mem.GCSys
-	memInfo["OtherSys"] = mem.OtherSys
-	memInfo["NextGC"] = mem.NextGC
-	memInfo["LastGC"] = mem.LastGC
-	memInfo["PauseTotalNs"] = mem.PauseTotalNs
-	memInfo["NumGC"] = mem.NumGC
+	stats["runtime-meminfo"] = make(map[string]interface{})
+	stats["runtime-meminfo"]["Alloc"] = mem.Alloc
+	stats["runtime-meminfo"]["TotalAlloc"] = mem.TotalAlloc
+	stats["runtime-meminfo"]["Sys"] = mem.Sys
+	stats["runtime-meminfo"]["Lookups"] = mem.Lookups
+	stats["runtime-meminfo"]["Mallocs"] = mem.Mallocs
+	stats["runtime-meminfo"]["Frees"] = mem.Frees
+	stats["runtime-meminfo"]["HeapAlloc"] = mem.HeapAlloc
+	stats["runtime-meminfo"]["HeapSys"] = mem.HeapSys
+	stats["runtime-meminfo"]["HeapIdle"] = mem.HeapIdle
+	stats["runtime-meminfo"]["HeapInuse"] = mem.HeapInuse
+	stats["runtime-meminfo"]["HeapReleased"] = mem.HeapReleased
+	stats["runtime-meminfo"]["HeapObjects"] = mem.HeapObjects
+	stats["runtime-meminfo"]["StackInuse"] = mem.StackInuse
+	stats["runtime-meminfo"]["StackSys"] = mem.StackSys
+	stats["runtime-meminfo"]["MSpanInuse"] = mem.MSpanInuse
+	stats["runtime-meminfo"]["MSpanSys"] = mem.MSpanSys
+	stats["runtime-meminfo"]["MCacheInuse"] = mem.MCacheInuse
+	stats["runtime-meminfo"]["MCacheSys"] = mem.MCacheSys
+	stats["runtime-meminfo"]["BuckHashSys"] = mem.BuckHashSys
+	stats["runtime-meminfo"]["GCSys"] = mem.GCSys
+	stats["runtime-meminfo"]["OtherSys"] = mem.OtherSys
+	stats["runtime-meminfo"]["NextGC"] = mem.NextGC
+	stats["runtime-meminfo"]["LastGC"] = mem.LastGC
+	stats["runtime-meminfo"]["PauseTotalNs"] = mem.PauseTotalNs
+	stats["runtime-meminfo"]["NumGC"] = mem.NumGC
 
-	response, err := json.MarshalIndent(memInfo, "", "  ")
+	response, err := json.MarshalIndent(stats, "", "  ")
 	if err != nil {
 		log.Printf("Error parsing: %s", err)
 	}
+	response = append(response, 10)
 	return response
 }
