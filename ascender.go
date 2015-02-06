@@ -85,13 +85,16 @@ func runControl() {
 }
 
 func main() {
+	// Start internals.
 	go listenTcp()
 	go msgHandler()
-	go ghostats.Start("localhost", "6031", ascender)
 
+	// Start stat services.	
 	sentCnt := NewStatser()
 	go statsTracker(sentCnt)
+	go ghostats.Start("localhost", "6031", ascender)
 
+	// Start outputs
 	for i := 0; i < ascender.workers; i++ {
 		go sqs.BatchSender(batchBuffer, sentCnt)
 	}

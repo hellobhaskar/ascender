@@ -15,12 +15,13 @@ func Start(address, port string, config interface{}) {
 	log.Printf("Stats API started: %s:%s\n",
 		address,
 		port)
+	
 	server, err := net.Listen("tcp", address+":"+port)
 	if err != nil {
 		log.Fatalf("Listener error: %s\n", err)
 	}
 	defer server.Close()
-	// Connection handler loop.
+
 	for {
 		conn, err := server.Accept()
 		if err != nil {
