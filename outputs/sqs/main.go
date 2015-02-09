@@ -15,18 +15,23 @@ import (
 var (
 	accessKey = flag.String("aws-access-key",
 		os.Getenv("ASCENDER_ACCESS_KEY"),
-		"Required: AWS access key")
+		"AWS access key")
 	secretKey = flag.String("aws-secret-key",
 		os.Getenv("ASCENDER_SECRET_KEY"),
-		"Required: AWS secret key")
+		"AWS secret key")
 	queueName = flag.String("aws-sqs-queue",
 		os.Getenv("ASCENDER_SQS_QUEUE"),
-		"Required: SQS queue name")
+		"SQS queue name")
 	regionString = flag.String("aws-sqs-region",
 		os.Getenv("ASCENDER_SQS_REGION"),
-		"Required: SQS queue region")
+		"SQS queue region")
 	region aws.Region
 )
+
+func init() {
+	flag.Parse()
+	region = awsFormatRegion(regionString)
+}
 
 // Convert region human input to type 'aws.Region'.
 func awsFormatRegion(r *string) aws.Region {
@@ -56,10 +61,6 @@ func awsFormatRegion(r *string) aws.Region {
 		log.Fatalf("Invalid Region: %s\n", *r)
 	}
 	return region
-}
-
-func init() {
-	region = awsFormatRegion(regionString)
 }
 
 type Statser interface {

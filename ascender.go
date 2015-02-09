@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jamiealquiza/ascender/outputs/sqs"
-	"github.com/jamiealquiza/ascender/util/ghostats"
+	"github.com/jamiealquiza/ghostats"
 )
 
 // General server config struct.
@@ -92,7 +92,7 @@ func main() {
 	// Start stat services.	
 	sentCnt := NewStatser()
 	go statsTracker(sentCnt)
-	go ghostats.Start("localhost", "6031", ascender)
+	go ghostats.Start("localhost", "6031", nil)
 
 	// Start outputs
 	for i := 0; i < ascender.workers; i++ {
