@@ -59,6 +59,7 @@ func awsFormatRegion(r *string) aws.Region {
 }
 
 func init() {
+	flag.Parse()
 	region = awsFormatRegion(regionString)
 }
 
