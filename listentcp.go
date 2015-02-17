@@ -8,12 +8,12 @@ import (
 	"net"
 )
 
-// Listens for events, 'reqHandler' goroutine dispatched for each.
+// Listens for messages, reqHandler goroutine dispatched for each.
 func listenTcp() {
 	log.Printf("Ascender TCP listener started: %s:%s\n",
-		ascender.addr,
-		ascender.port)
-	server, err := net.Listen("tcp", ascender.addr+":"+ascender.port)
+		config.addr,
+		config.port)
+	server, err := net.Listen("tcp", config.addr+":"+config.port)
 	if err != nil {
 		log.Fatalf("Listener error: %s\n", err)
 	}
@@ -29,7 +29,7 @@ func listenTcp() {
 	}
 }
 
-// Receives messages from 'listener' & sends over 'sendQueue'.
+// Receives messages from 'listener' & sends over 'messageIncomingQueue'.
 func reqHandler(conn net.Conn) {
 	// We match SQS max message size since it's
 	// the reference message queue (for now).
@@ -41,8 +41,8 @@ func reqHandler(conn net.Conn) {
 		fmt.Println(err.Error())
 	}
 	// Drop message and respond if the 'batchBuffer' is at capacity.
-	if len(sendQueue) >= 1 {
-		status := response(503, 0, "send queue full")
+	if len(messageIncomingQueue) >= 1 {
+		status := response(503, 0, "message queue full")
 		conn.Write(status)
 		conn.Close()
 	} else {
@@ -52,7 +52,7 @@ func reqHandler(conn net.Conn) {
 			status := response(400, mlen, "exceeds message size limit")
 			conn.Write(status)
 			conn.Close()
-			sendQueue <- reqBuf[:maxMsgSize]
+			messageIncomingQueue <- reqBuf[:maxMsgSize]
 		case string(reqBuf[:mlen]) == "\n":
 			status := response(204, mlen, "received empty message")
 			conn.Write(status)
@@ -61,7 +61,7 @@ func reqHandler(conn net.Conn) {
 			status := response(200, mlen, "received")
 			conn.Write(status)
 			conn.Close()
-			sendQueue <- reqBuf[:mlen]
+			messageIncomingQueue <- reqBuf[:mlen]
 		}
 	}
 }
