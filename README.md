@@ -118,6 +118,46 @@ Message is larger than 256K, truncated and queued for sending: `400|266240|excee
 ### 503 message queue full
 Messages in-flight exceeds `-queue-cap`, new messages are dropped until queue has open slots: `503|-1|send queue full`
 
+# Admin / Stats API
+WIP. Ascender runs an instance of [Ghostats](https://github.com/jamiealquiza/ghostats) that exposes Go runtime data over TCP.
+
+<pre>
+% echo stats | nc localhost 6040
+{
+  "runtime-meminfo": {
+    "Alloc": 1422664,
+    "BuckHashSys": 1441776,
+    "Frees": 67398,
+    "GCSys": 268436,
+    "HeapAlloc": 1422664,
+    "HeapIdle": 1343488,
+    "HeapInuse": 2441216,
+    "HeapObjects": 13561,
+    "HeapReleased": 0,
+    "HeapSys": 3784704,
+    "LastGC": 1424214667658042851,
+    "Lookups": 13,
+    "MCacheInuse": 1200,
+    "MCacheSys": 16384,
+    "MSpanInuse": 31304,
+    "MSpanSys": 32768,
+    "Mallocs": 80959,
+    "NextGC": 2745168,
+    "NumGC": 11,
+    "OtherSys": 274548,
+    "PauseTotalNs": 4307280,
+    "StackInuse": 409600,
+    "StackSys": 409600,
+    "Sys": 6228216,
+    "TotalAlloc": 4620208
+  },
+  "service": {
+    "start-time": "2015-02-17T16:11:06-07:00",
+    "uptime-seconds": 3
+  }
+}
+</pre>
+
 # To Do
 - Close issues ;)
 - More thorough documentation

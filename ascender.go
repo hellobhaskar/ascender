@@ -93,7 +93,7 @@ func main() {
 	// Start stat services.	
 	sentCnt := NewStatser()
 	go statsTracker(sentCnt)
-	go ghostats.Start("localhost", "6031", nil)
+	go ghostats.Start("localhost", "6040", nil)
 
 	// Start outputs
 	for i := 0; i < config.workers; i++ {
