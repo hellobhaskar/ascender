@@ -62,6 +62,14 @@ func awsFormatRegion(r *string) aws.Region {
 	return region
 }
 
+<<<<<<< HEAD
+=======
+func init() {
+	flag.Parse()
+	region = awsFormatRegion(regionString)
+}
+
+>>>>>>> master
 type Statser interface {
 	IncrSent(int64)
 	FetchSent() int64
