@@ -1,4 +1,4 @@
-// 2014, 1015 Jamie Alquiza
+// 2014, 2015 Jamie Alquiza
 package main
 
 import (
@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/jamiealquiza/ascender/outputs/sqs"
+	"github.com/jamiealquiza/ghostats"
 )
 
-// General server config struct.
 type ascenderConfig struct {
 	addr     string
 	port     string
@@ -21,54 +21,56 @@ type ascenderConfig struct {
 }
 
 var (
-	// Comm. for 'reqHandler' to pass messages to the 'msgHandler'.
-	// Limits number of in-flight message and subsequently a
-	// is a large dictator of Ascender memory limits.
-	sendQueue = make(chan []byte, ascender.queuecap)
-	// Queue that 'msgHandler' produces to and 'batchSender'
-	// workers consume from.
-	batchBuffer = make(chan []string, ascender.queuecap)
-	// Timeout to force current 'msgHandler' batch to the 'batchBuffer'.
+	// Channel that listeners pass received messages to
+	// for consumption by messageHandler.
+	// Limits number of in-flight message and subsequently is 
+	// a large dictator of Ascender memory usage.
+	messageIncomingQueue = make(chan []byte, config.queuecap)
+	// Queue that messageHandler loads message batches into.
+	// Output workers read batches and send to destinations.
+	messageOutgoingQueue = make(chan []string, config.queuecap)
+	// Timeout to force the current messageHandler batch to the messageOutgoingQueue.
 	flushTimeout = time.Tick(5 * time.Second)
 
 	sig_chan = make(chan os.Signal)
-	ascender = ascenderConfig{}
+	config = ascenderConfig{}
 )
 
 func init() {
-	// Parse flags.
-	flag.StringVar(&ascender.addr, "listen-addr", "localhost", "bind address")
-	flag.StringVar(&ascender.port, "listen-port", "6030", "bind port")
-	flag.IntVar(&ascender.workers, "workers", 3, "queue workers")
-	flag.IntVar(&ascender.queuecap, "queue-cap", 100, "In-flight message queue capacity")
+	flag.StringVar(&config.addr, "listen-addr", "localhost", "bind address")
+	flag.StringVar(&config.port, "listen-port", "6030", "bind port")
+	flag.IntVar(&config.workers, "workers", 3, "queue workers")
+	flag.IntVar(&config.queuecap, "queue-cap", 100, "In-flight message queue capacity")
 	flag.Parse()
-	// Update vars that dep on flags.
-	sendQueue = make(chan []byte, ascender.queuecap)
-	batchBuffer = make(chan []string, ascender.queuecap)
+	// Update vars that depend on flag inputs.
+	messageIncomingQueue = make(chan []byte, config.queuecap)
+	messageOutgoingQueue = make(chan []string, config.queuecap)
 }
 
-// Receives messages on 'sendQueue', batches into message groups
-// and flushes into the 'batchBuffer' channel.
-func msgHandler() {
+// Receives messages on messageIncomingQueue, batches into message groups
+// and flushes into the 'messageOutgoingQueue' channel when the batch
+// hits either the configured batchSize or flushTimeout treshold.
+func messageHandler() {
 	// AWS SQS max batch size is currently 10.
 	batchSize := 10
 	messages := []string{}
 	for {
 		select {
 		case <-flushTimeout:
-			// We hit the flush timeout, see if there's messages to ship.
+			// We hit the flush timeout, load the current batch if present.
 			if len(messages) > 0 {
-				batchBuffer <- messages
+				messageOutgoingQueue <- messages
 				messages = []string{}
 			}
 			messages = []string{}
-		case msg := <-sendQueue:
-			// Enqueue and reset message batch if we're at 'batchSize'.
+		case msg := <-messageIncomingQueue:
+			// If this puts us at the batchSize threshold, enqueue
+			// into the messageOutgoingQueue.
 			if len(messages) == batchSize {
-				batchBuffer <- messages
+				messageOutgoingQueue <- messages
 				messages = []string{}
 			}
-			// Otherwise, append message to batch.
+			// Otherwise, just append message to current batch.
 			messages = append(messages, string(msg))
 		}
 	}
@@ -84,14 +86,18 @@ func runControl() {
 }
 
 func main() {
+	// Start internals.
 	go listenTcp()
-	go msgHandler()
+	go messageHandler()
 
+	// Start stat services.	
 	sentCnt := NewStatser()
 	go statsTracker(sentCnt)
+	go ghostats.Start("localhost", "6040", nil)
 
-	for i := 0; i < ascender.workers; i++ {
-		go sqs.BatchSender(batchBuffer, sentCnt)
+	// Start outputs
+	for i := 0; i < config.workers; i++ {
+		go sqs.Sender(messageOutgoingQueue, sentCnt)
 	}
 
 	runControl()

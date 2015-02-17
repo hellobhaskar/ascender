@@ -45,7 +45,7 @@ func statsTracker(s *Statser) {
 				log.Printf("Last 5s: sent %d messages | Avg: %.2f messages/sec. | Send queue length: %d\n",
 					deltaCnt,
 					float64(deltaCnt)/5,
-					len(sendQueue))
+					len(messageIncomingQueue))
 			}
 		}
 	}

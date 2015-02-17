@@ -11,22 +11,26 @@ import (
 	"github.com/jamiealquiza/ascender/vendor/github.com/AdRoll/goamz/sqs"
 )
 
-// AWS vars.
 var (
 	accessKey = flag.String("aws-access-key",
 		os.Getenv("ASCENDER_ACCESS_KEY"),
-		"Required: AWS access key")
+		"AWS access key")
 	secretKey = flag.String("aws-secret-key",
 		os.Getenv("ASCENDER_SECRET_KEY"),
-		"Required: AWS secret key")
+		"AWS secret key")
 	queueName = flag.String("aws-sqs-queue",
 		os.Getenv("ASCENDER_SQS_QUEUE"),
-		"Required: SQS queue name")
+		"SQS queue name")
 	regionString = flag.String("aws-sqs-region",
 		os.Getenv("ASCENDER_SQS_REGION"),
-		"Required: SQS queue region")
+		"SQS queue region")
 	region aws.Region
 )
+
+func init() {
+	flag.Parse()
+	region = awsFormatRegion(regionString)
+}
 
 // Convert region human input to type 'aws.Region'.
 func awsFormatRegion(r *string) aws.Region {
@@ -58,21 +62,24 @@ func awsFormatRegion(r *string) aws.Region {
 	return region
 }
 
+<<<<<<< HEAD
+=======
 func init() {
 	flag.Parse()
 	region = awsFormatRegion(regionString)
 }
 
+>>>>>>> master
 type Statser interface {
 	IncrSent(int64)
 	FetchSent() int64
 }
 
-// 'batchBuffer' worker that reads message batches
-// from the channel and sends into SQS.
-func BatchSender(batches <-chan []string, s Statser) {
-	sqsConn := EstabSqs(*accessKey, *secretKey, region, *queueName)
-	for m := range batches {
+// Worker that reads message batches from the messageOutgoingQueue
+// and writes to SQS.
+func Sender(messageOutgoingQueue <-chan []string, s Statser) {
+	sqsConn := estabSqs(*accessKey, *secretKey, region, *queueName)
+	for m := range messageOutgoingQueue {
 		_, err := sqsConn.SendMessageBatchString(m)
 		if err != nil {
 			fmt.Printf("SQS batch error: %s\n", err)
@@ -81,8 +88,8 @@ func BatchSender(batches <-chan []string, s Statser) {
 	}
 }
 
-// Func to establish 'batchSender' connection to SQS.
-func EstabSqs(accessKey string, secretKey string, region aws.Region, queueName string) *sqs.Queue {
+// estabSqs establishes a connection to SQS.
+func estabSqs(accessKey string, secretKey string, region aws.Region, queueName string) *sqs.Queue {
 	auth := aws.Auth{AccessKey: accessKey, SecretKey: secretKey}
 	client := sqs.New(auth, region)
 	queue, err := client.GetQueue(queueName)
