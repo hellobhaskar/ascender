@@ -116,7 +116,7 @@ No message body, no action taken: `204|0|received empty message`
 Message is larger than 256K, truncated and queued for sending: `400|266240|exceeds message size limit`
 
 ### 503 message queue full
-Messages in-flight exceeds `-queue-cap`, new messages are dropped until queue has open slots: `503|-1|send queue full`
+Messages in-flight exceeds `-queue-cap`, new messages are dropped until queue has open slots: `503|-1|message queue full`
 
 # Admin / Stats API
 WIP. Ascender runs an instance of [Ghostats](https://github.com/jamiealquiza/ghostats) that exposes Go runtime data over TCP.
