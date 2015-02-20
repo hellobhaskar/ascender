@@ -27,11 +27,6 @@ var (
 	region aws.Region
 )
 
-func init() {
-	flag.Parse()
-	region = awsFormatRegion(regionString)
-}
-
 // Convert region human input to type 'aws.Region'.
 func awsFormatRegion(r *string) aws.Region {
 	var region aws.Region
@@ -62,11 +57,6 @@ func awsFormatRegion(r *string) aws.Region {
 	return region
 }
 
-func init() {
-	flag.Parse()
-	region = awsFormatRegion(regionString)
-}
-
 type Statser interface {
 	IncrSent(int64)
 	FetchSent() int64
@@ -75,6 +65,7 @@ type Statser interface {
 // Worker that reads message batches from the messageOutgoingQueue
 // and writes to SQS.
 func Sender(messageOutgoingQueue <-chan []string, s Statser) {
+	region = awsFormatRegion(regionString)
 	sqsConn := estabSqs(*accessKey, *secretKey, region, *queueName)
 	for m := range messageOutgoingQueue {
 		_, err := sqsConn.SendMessageBatchString(m)
