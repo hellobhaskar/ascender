@@ -41,7 +41,7 @@ func reqHandler(conn net.Conn) {
 		fmt.Println(err.Error())
 	}
 	// Drop message and respond if the 'batchBuffer' is at capacity.
-	if len(messageIncomingQueue) >= 1 {
+	if len(messageIncomingQueue) >= config.queuecap {
 		status := response(503, 0, "message queue full")
 		conn.Write(status)
 		conn.Close()
