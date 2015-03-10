@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -34,12 +35,13 @@ func reqHandler(conn net.Conn) {
 	// We match SQS max message size since it's
 	// the reference message queue (for now).
 	maxMsgSize := 256 * 1024
-	reqBuf := make([]byte, maxMsgSize)
+	var reqBuf bytes.Buffer
+	io.Copy(&reqBuf, conn)
 	// Get size of received message.
-	mlen, err := conn.Read(reqBuf)
+	/*reqBuf.Len(), err := conn.Read(reqBuf)
 	if err != nil && err != io.EOF {
 		fmt.Println(err.Error())
-	}
+	}*/
 	// Drop message and respond if the 'batchBuffer' is at capacity.
 	if len(messageIncomingQueue) >= config.queuecap {
 		status := response(503, 0, "message queue full")
@@ -48,20 +50,20 @@ func reqHandler(conn net.Conn) {
 	} else {
 		// Queue message and send response back to client.
 		switch {
-		case mlen > maxMsgSize:
-			status := response(400, mlen, "exceeds message size limit")
+		case reqBuf.Len() > maxMsgSize:
+			status := response(400, reqBuf.Len(), "exceeds message size limit")
 			conn.Write(status)
 			conn.Close()
-			messageIncomingQueue <- reqBuf[:maxMsgSize]
-		case string(reqBuf[:mlen]) == "\n":
-			status := response(204, mlen, "received empty message")
+			messageIncomingQueue <- reqBuf.Bytes()[:maxMsgSize]
+		case string(reqBuf.Bytes()) == "\n":
+			status := response(204, reqBuf.Len(), "received empty message")
 			conn.Write(status)
 			conn.Close()
 		default:
-			status := response(200, mlen, "received")
+			status := response(200, reqBuf.Len(), "received")
 			conn.Write(status)
 			conn.Close()
-			messageIncomingQueue <- reqBuf[:mlen]
+			messageIncomingQueue <- reqBuf.Bytes()
 		}
 	}
 }
