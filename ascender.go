@@ -25,7 +25,7 @@ var (
 	// for consumption by messageHandler.
 	// Limits number of in-flight message and subsequently is 
 	// a large dictator of Ascender memory usage.
-	messageIncomingQueue = make(chan []byte, config.queuecap)
+	messageIncomingQueue = make(chan string, config.queuecap)
 	// Queue that messageHandler loads message batches into.
 	// Output workers read batches and send to destinations.
 	messageOutgoingQueue = make(chan []string, config.queuecap)
@@ -43,7 +43,7 @@ func init() {
 	flag.IntVar(&config.queuecap, "queue-cap", 100, "In-flight message queue capacity")
 	flag.Parse()
 	// Update vars that depend on flag inputs.
-	messageIncomingQueue = make(chan []byte, config.queuecap)
+	messageIncomingQueue = make(chan string, config.queuecap)
 	messageOutgoingQueue = make(chan []string, config.queuecap)
 }
 
@@ -71,7 +71,7 @@ func messageHandler() {
 				messages = []string{}
 			}
 			// Otherwise, just append message to current batch.
-			messages = append(messages, string(msg))
+			messages = append(messages, msg)
 		}
 	}
 }

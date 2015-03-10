@@ -3,11 +3,16 @@ package main
 
 import (
 	"bytes"
+	"bufio"
 	"fmt"
 	"io"
 	"log"
 	"net"
 )
+
+// We match SQS max message size since it's
+// the reference message queue (for now).
+var maxMsgSize = 256 * 1024
 
 // Listens for messages, reqHandler goroutine dispatched for each.
 func listenTcp() {
@@ -32,44 +37,41 @@ func listenTcp() {
 
 // Receives messages from 'listener' & sends over 'messageIncomingQueue'.
 func reqHandler(conn net.Conn) {
-	// We match SQS max message size since it's
-	// the reference message queue (for now).
-	maxMsgSize := 256 * 1024
+	// Read messages and split on newline.
 	var reqBuf bytes.Buffer
 	io.Copy(&reqBuf, conn)
-	// Get size of received message.
-	/*reqBuf.Len(), err := conn.Read(reqBuf)
-	if err != nil && err != io.EOF {
-		fmt.Println(err.Error())
-	}*/
-	// Drop message and respond if the 'batchBuffer' is at capacity.
-	if len(messageIncomingQueue) >= config.queuecap {
-		status := response(503, 0, "message queue full")
-		conn.Write(status)
-		conn.Close()
-	} else {
-		// Queue message and send response back to client.
-		switch {
-		case reqBuf.Len() > maxMsgSize:
-			status := response(400, reqBuf.Len(), "exceeds message size limit")
+	messages := bufio.NewScanner(&reqBuf)
+
+	for messages.Scan() {
+		m := messages.Text()
+
+		// Drop message and respond if the 'batchBuffer' is at capacity.
+		if len(messageIncomingQueue) >= config.queuecap {
+			status := response(503, 0, "message queue full")
 			conn.Write(status)
-			conn.Close()
-			messageIncomingQueue <- reqBuf.Bytes()[:maxMsgSize]
-		case string(reqBuf.Bytes()) == "\n":
-			status := response(204, reqBuf.Len(), "received empty message")
-			conn.Write(status)
-			conn.Close()
-		default:
-			status := response(200, reqBuf.Len(), "received")
-			conn.Write(status)
-			conn.Close()
-			messageIncomingQueue <- reqBuf.Bytes()
+		} else {
+			// Queue message and send response back to client.
+			switch {
+			case len(m) > maxMsgSize:
+				status := response(400, len(m), "exceeds message size limit")
+				conn.Write(status)
+				messageIncomingQueue <- m[:maxMsgSize]
+				conn.Close()
+			case m == "\n":
+				status := response(204, len(m), "received empty message")
+				conn.Write(status)
+			default:
+				status := response(200, len(m), "received")
+				conn.Write(status)
+				messageIncomingQueue <- m
+			}
 		}
 	}
+	conn.Close()
 }
 
 // Generate response codes.
 func response(code int, bytes int, info string) []byte {
-	message := fmt.Sprintf("%d|%d|%s\n", code, bytes-1, info)
+	message := fmt.Sprintf("%d|%d|%s\n", code, bytes, info)
 	return []byte(message)
 }
