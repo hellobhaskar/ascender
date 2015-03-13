@@ -1,4 +1,4 @@
-// 2014, 1015 Jamie Alquiza
+// 2014, 2015 Jamie Alquiza
 package sqs
 
 import (
