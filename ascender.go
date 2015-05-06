@@ -42,7 +42,7 @@ func init() {
 	flag.StringVar(&config.addr, "listen-addr", "localhost", "bind address")
 	flag.StringVar(&config.port, "listen-port", "6030", "bind port")
 	flag.IntVar(&config.workers, "workers", 3, "queue workers")
-	flag.IntVar(&config.queuecap, "queue-cap", 100, "In-flight message queue capacity")
+	flag.IntVar(&config.queuecap, "queue-cap", 1000, "In-flight message queue capacity")
 	flag.BoolVar(&config.console, "console-out", false, "Dump output to console")
 	flag.Parse()
 	// Update vars that depend on flag inputs.
