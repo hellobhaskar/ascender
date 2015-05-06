@@ -64,9 +64,9 @@ type Statser interface {
 
 // Worker that reads message batches from the messageOutgoingQueue
 // and writes to SQS.
-func Sender(messageOutgoingQueue <-chan []string, s Statser) {
+func Handler(messageOutgoingQueue <-chan []string, s Statser) {
 	region = awsFormatRegion(regionString)
-	sqsConn := estabSqs(*accessKey, *secretKey, region, *queueName)
+	sqsConn := newSqsConn(*accessKey, *secretKey, region, *queueName)
 	for m := range messageOutgoingQueue {
 		_, err := sqsConn.SendMessageBatchString(m)
 		if err != nil {
@@ -76,8 +76,8 @@ func Sender(messageOutgoingQueue <-chan []string, s Statser) {
 	}
 }
 
-// estabSqs establishes a connection to SQS.
-func estabSqs(accessKey string, secretKey string, region aws.Region, queueName string) *sqs.Queue {
+// newSqsConn establishes a connection to SQS.
+func newSqsConn(accessKey string, secretKey string, region aws.Region, queueName string) *sqs.Queue {
 	auth := aws.Auth{AccessKey: accessKey, SecretKey: secretKey}
 	client := sqs.New(auth, region)
 	queue, err := client.GetQueue(queueName)

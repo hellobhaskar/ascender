@@ -17,31 +17,30 @@ import (
 var config struct {
 	addr     string
 	port     string
-	workers  int
+	handlers int
 	queuecap int
-	console bool
+	console  bool
 }
 
 var (
 	// Channel that listeners pass received messages to
 	// for consumption by messageHandler.
-	// Limits number of in-flight message and subsequently is 
+	// Limits number of in-flight message and subsequently is
 	// a large dictator of Ascender memory usage.
 	messageIncomingQueue = make(chan string, config.queuecap)
 	// Queue that messageHandler loads message batches into.
-	// Output workers read batches and send to destinations.
+	// Output handlers read batches and send to destinations.
 	messageOutgoingQueue = make(chan []string, config.queuecap)
 	// Timeout to force the current messageHandler batch to the messageOutgoingQueue.
 	flushTimeout = time.Tick(5 * time.Second)
 
 	sig_chan = make(chan os.Signal)
-
 )
 
 func init() {
 	flag.StringVar(&config.addr, "listen-addr", "localhost", "bind address")
 	flag.StringVar(&config.port, "listen-port", "6030", "bind port")
-	flag.IntVar(&config.workers, "workers", 3, "queue workers")
+	flag.IntVar(&config.handlers, "handlers", 3, "Queue handlers")
 	flag.IntVar(&config.queuecap, "queue-cap", 1000, "In-flight message queue capacity")
 	flag.BoolVar(&config.console, "console-out", false, "Dump output to console")
 	flag.Parse()
@@ -93,17 +92,17 @@ func main() {
 	go listenTcp()
 	go messageHandler()
 
-	// Start stat services.	
+	// Start stat services.
 	sentCnt := NewStatser()
 	go statsTracker(sentCnt)
 	go ghostats.Start("localhost", "6040", nil)
 
 	// Start outputs
-	for i := 0; i < config.workers; i++ {
+	for i := 0; i < config.handlers; i++ {
 		if config.console {
 			go console.Handler(messageOutgoingQueue)
 		} else {
-			go sqs.Sender(messageOutgoingQueue, sentCnt)
+			go sqs.Handler(messageOutgoingQueue, sentCnt)
 		}
 	}
 
