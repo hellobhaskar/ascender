@@ -43,22 +43,18 @@ func reqHandler(conn net.Conn) {
 
 		// Drop message and respond if the 'batchBuffer' is at capacity.
 		if len(messageIncomingQueue) >= config.queuecap {
-			status := response(503, 0, "message queue full")
-			conn.Write(status)
+			conn.Write(response(503, 0, "message queue full"))
 		} else {
 			// Queue message and send response back to client.
 			switch {
 			case len(m) > maxMsgSize:
-				status := response(400, len(m), "exceeds message size limit")
-				conn.Write(status)
+				conn.Write(response(400, len(m), "exceeds message size limit"))
 				messageIncomingQueue <- m[:maxMsgSize]
 				conn.Close()
 			case m == "\n":
-				status := response(204, len(m), "received empty message")
-				conn.Write(status)
+				conn.Write(response(204, len(m), "received empty message"))
 			default:
-				status := response(200, len(m), "received")
-				conn.Write(status)
+				conn.Write(response(200, len(m), "received"))
 				messageIncomingQueue <- m
 			}
 		}
