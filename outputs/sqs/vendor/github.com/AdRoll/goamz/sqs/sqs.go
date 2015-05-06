@@ -13,7 +13,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/jamiealquiza/ascender/vendor/github.com/AdRoll/goamz/aws"
+	"github.com/jamiealquiza/ascender/outputs/sqs/vendor/github.com/AdRoll/goamz/aws"
 	"io"
 	"io/ioutil"
 	"log"

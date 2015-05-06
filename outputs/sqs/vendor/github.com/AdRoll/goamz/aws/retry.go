@@ -34,7 +34,7 @@ type RetryPolicy interface {
 // factor of 300ms (300ms, 600ms, 1200ms). If the retry is because of
 // throttling, the delay will also include some randomness.
 //
-// See https://github.com/jamiealquiza/ascender/vendor/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/retry/PredefinedRetryPolicies.java#L90.
+// See https://github.com/jamiealquiza/ascender/outputs/sqs/vendor/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/retry/PredefinedRetryPolicies.java#L90.
 type DefaultRetryPolicy struct {
 }
 
@@ -57,7 +57,7 @@ func (policy DefaultRetryPolicy) Delay(target string, r *http.Response, err erro
 // It will retry up to 10 times, and uses an exponential backoff with a scale
 // factor of 25ms (25ms, 50ms, 100ms, ...).
 //
-// See https://github.com/jamiealquiza/ascender/vendor/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/retry/PredefinedRetryPolicies.java#L103.
+// See https://github.com/jamiealquiza/ascender/outputs/sqs/vendor/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/retry/PredefinedRetryPolicies.java#L103.
 type DynamoDBRetryPolicy struct {
 }
 

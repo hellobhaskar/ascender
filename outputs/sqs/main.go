@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/jamiealquiza/ascender/vendor/github.com/AdRoll/goamz/aws"
-	"github.com/jamiealquiza/ascender/vendor/github.com/AdRoll/goamz/sqs"
+	"github.com/jamiealquiza/ascender/outputs/sqs/vendor/github.com/AdRoll/goamz/aws"
+	"github.com/jamiealquiza/ascender/outputs/sqs/vendor/github.com/AdRoll/goamz/sqs"
 )
 
 var (

@@ -4,7 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"github.com/jamiealquiza/ascender/vendor/github.com/AdRoll/goamz/aws"
+	"github.com/jamiealquiza/ascender/outputs/sqs/vendor/github.com/AdRoll/goamz/aws"
 	"sort"
 	"strings"
 )
