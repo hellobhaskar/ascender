@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jamiealquiza/ascender/outputs/console"
-	"./outputs/sqs"
+	"github.com/jamiealquiza/ascender/outputs/sqs"
 	"github.com/jamiealquiza/ghostats"
 )
 
