@@ -2,10 +2,8 @@
 package main
 
 import (
-	"bytes"
 	"bufio"
 	"fmt"
-	"io"
 	"log"
 	"net"
 )
@@ -37,10 +35,8 @@ func listenTcp() {
 
 // Receives messages from 'listener' & sends over 'messageIncomingQueue'.
 func reqHandler(conn net.Conn) {
-	// Read messages and split on newline.
-	var reqBuf bytes.Buffer
-	io.Copy(&reqBuf, conn)
-	messages := bufio.NewScanner(&reqBuf)
+	defer conn.Close()
+	messages := bufio.NewScanner(conn)
 
 	for messages.Scan() {
 		m := messages.Text()
@@ -67,7 +63,7 @@ func reqHandler(conn net.Conn) {
 			}
 		}
 	}
-	conn.Close()
+
 }
 
 // Generate response codes.
