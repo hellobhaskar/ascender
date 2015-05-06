@@ -9,52 +9,55 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jamiealquiza/ascender/outputs/sqs"
 	"github.com/jamiealquiza/ascender/outputs/console"
+	"./outputs/sqs"
 	"github.com/jamiealquiza/ghostats"
 )
-
-var config struct {
-	addr     string
-	port     string
-	handlers int
-	queuecap int
-	console  bool
-}
 
 var (
 	// Channel that listeners pass received messages to
 	// for consumption by messageHandler.
 	// Limits number of in-flight message and subsequently is
 	// a large dictator of Ascender memory usage.
-	messageIncomingQueue = make(chan string, config.queuecap)
+	messageIncomingQueue = make(chan string, options.queuecap)
 	// Queue that messageHandler loads message batches into.
 	// Output handlers read batches and send to destinations.
-	messageOutgoingQueue = make(chan []string, config.queuecap)
+	messageOutgoingQueue = make(chan []string, options.queuecap)
 	// Timeout to force the current messageHandler batch to the messageOutgoingQueue.
 	flushTimeout = time.Tick(5 * time.Second)
+
+	options struct {
+		addr     string
+		port     string
+		handlers int
+		queuecap int
+		console  bool
+	}
+
+	config struct {
+		batchSize    int
+		flushTimeout int
+	}
 
 	sig_chan = make(chan os.Signal)
 )
 
 func init() {
-	flag.StringVar(&config.addr, "listen-addr", "localhost", "bind address")
-	flag.StringVar(&config.port, "listen-port", "6030", "bind port")
-	flag.IntVar(&config.handlers, "handlers", 3, "Queue handlers")
-	flag.IntVar(&config.queuecap, "queue-cap", 1000, "In-flight message queue capacity")
-	flag.BoolVar(&config.console, "console-out", false, "Dump output to console")
+	flag.StringVar(&options.addr, "listen-addr", "localhost", "bind address")
+	flag.StringVar(&options.port, "listen-port", "6030", "bind port")
+	flag.IntVar(&options.handlers, "handlers", 3, "Queue handlers")
+	flag.IntVar(&options.queuecap, "queue-cap", 1000, "In-flight message queue capacity")
+	flag.BoolVar(&options.console, "console-out", false, "Dump output to console")
 	flag.Parse()
 	// Update vars that depend on flag inputs.
-	messageIncomingQueue = make(chan string, config.queuecap)
-	messageOutgoingQueue = make(chan []string, config.queuecap)
+	messageIncomingQueue = make(chan string, options.queuecap)
+	messageOutgoingQueue = make(chan []string, options.queuecap)
 }
 
 // Receives messages on messageIncomingQueue, batches into message groups
 // and flushes into the 'messageOutgoingQueue' channel when the batch
-// hits either the configured batchSize or flushTimeout treshold.
+// hits either the configured config.batchSize or flushTimeout treshold.
 func messageHandler() {
-	// AWS SQS max batch size is currently 10.
-	batchSize := 10
 	messages := []string{}
 	for {
 		select {
@@ -68,12 +71,14 @@ func messageHandler() {
 		case msg := <-messageIncomingQueue:
 			// If this puts us at the batchSize threshold, enqueue
 			// into the messageOutgoingQueue.
-			if len(messages) == batchSize {
+			if len(messages)+1 >= config.batchSize {
+				messages = append(messages, msg)
 				messageOutgoingQueue <- messages
 				messages = []string{}
+			} else {
+				// Otherwise, just append message to current batch.
+				messages = append(messages, msg)
 			}
-			// Otherwise, just append message to current batch.
-			messages = append(messages, msg)
 		}
 	}
 }
@@ -98,10 +103,13 @@ func main() {
 	go ghostats.Start("localhost", "6040", nil)
 
 	// Start outputs
-	for i := 0; i < config.handlers; i++ {
-		if config.console {
+	for i := 0; i < options.handlers; i++ {
+		if options.console {
+			config.batchSize = 1
 			go console.Handler(messageOutgoingQueue)
 		} else {
+			// AWS SQS max batch size is currently 10.
+			config.batchSize = 10
 			go sqs.Handler(messageOutgoingQueue, sentCnt)
 		}
 	}

@@ -15,9 +15,9 @@ var maxMsgSize = 256 * 1024
 // Listens for messages, reqHandler goroutine dispatched for each.
 func listenTcp() {
 	log.Printf("Ascender TCP listener started: %s:%s\n",
-		config.addr,
-		config.port)
-	server, err := net.Listen("tcp", config.addr+":"+config.port)
+		options.addr,
+		options.port)
+	server, err := net.Listen("tcp", options.addr+":"+options.port)
 	if err != nil {
 		log.Fatalf("Listener error: %s\n", err)
 	}
@@ -42,9 +42,9 @@ func reqHandler(conn net.Conn) {
 		m := messages.Text()
 
 		// Drop message and respond if the 'batchBuffer' is at capacity.
-		if len(messageIncomingQueue) >= config.queuecap {
+		if len(messageIncomingQueue) >= options.queuecap {
 			conn.Write(response(503, 0, "message queue full"))
-			log.Printf("Queue capacity %d reached, dropping message\n", config.queuecap)
+			log.Printf("Queue capacity %d reached, dropping message\n", options.queuecap)
 		} else {
 			// Queue message and send response back to client.
 			switch {
