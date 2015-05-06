@@ -10,14 +10,16 @@ import (
 	"time"
 
 	"github.com/jamiealquiza/ascender/outputs/sqs"
+	"github.com/jamiealquiza/ascender/outputs/console"
 	"github.com/jamiealquiza/ghostats"
 )
 
-type ascenderConfig struct {
+var config struct {
 	addr     string
 	port     string
 	workers  int
 	queuecap int
+	console bool
 }
 
 var (
@@ -33,7 +35,7 @@ var (
 	flushTimeout = time.Tick(5 * time.Second)
 
 	sig_chan = make(chan os.Signal)
-	config = ascenderConfig{}
+
 )
 
 func init() {
@@ -41,6 +43,7 @@ func init() {
 	flag.StringVar(&config.port, "listen-port", "6030", "bind port")
 	flag.IntVar(&config.workers, "workers", 3, "queue workers")
 	flag.IntVar(&config.queuecap, "queue-cap", 100, "In-flight message queue capacity")
+	flag.BoolVar(&config.console, "console-out", false, "Dump output to console")
 	flag.Parse()
 	// Update vars that depend on flag inputs.
 	messageIncomingQueue = make(chan string, config.queuecap)
@@ -97,7 +100,11 @@ func main() {
 
 	// Start outputs
 	for i := 0; i < config.workers; i++ {
-		go sqs.Sender(messageOutgoingQueue, sentCnt)
+		if config.console {
+			go console.Handler(messageOutgoingQueue)
+		} else {
+			go sqs.Sender(messageOutgoingQueue, sentCnt)
+		}
 	}
 
 	runControl()
